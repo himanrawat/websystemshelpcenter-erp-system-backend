@@ -1,10 +1,23 @@
+// {
+//   "compilerOptions": {
+//     "target": "ES2020",
+//     "module": "NodeNext",
+//     "rootDir": "src",
+//     "moduleResolution": "NodeNext",
+//     "outDir": "./dist",
+//     "strict": true
+//   }
+// }
+
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "NodeNext",
-    "rootDir": "src",
-    "moduleResolution": "NodeNext",
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./",
     "outDir": "./dist",
-    "strict": true
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true
   }
 }
