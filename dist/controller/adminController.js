@@ -44,7 +44,7 @@ let config = {
     },
 };
 const createAdmin = async (req, res) => {
-    const { name, email, password, photo, branchId, role, subscriptionExpiryDate } = req.body;
+    const { name, email, password, photo, branchId, role, subscriptionExpiryDate, } = req.body;
     try {
         const hashedPassword = (0, bcrypt_1.hashSync)(password, 10);
         const findAdmin = await db_config_1.default.admin.findUnique({
@@ -79,8 +79,8 @@ const createAdmin = async (req, res) => {
         });
         const campus = await db_config_1.default.campus.findUnique({
             where: {
-                id: branch.campusId
-            }
+                id: branch.campusId,
+            },
         });
         if (!campus) {
             return res.status(404).json({
@@ -90,11 +90,11 @@ const createAdmin = async (req, res) => {
         }
         const adminData = await db_config_1.default.admin.update({
             where: {
-                id: newAdmin.id
+                id: newAdmin.id,
             },
             data: {
-                schoolName: campus.name
-            }
+                schoolName: campus.name,
+            },
         });
         const otpResult = await (0, helper_1.sendOtp)(email);
         if (!otpResult.success) {
@@ -211,9 +211,7 @@ const loginAdmin = async (req, res) => {
                     success: false,
                 });
             }
-            return res
-                .status(401)
-                .json({
+            return res.status(401).json({
                 message: "You need to verify your email and otp is already sent on email.",
                 success: false,
             });
@@ -225,8 +223,8 @@ const loginAdmin = async (req, res) => {
         }
         const campus = await db_config_1.default.campus.findFirst({
             where: {
-                name: admin.schoolName
-            }
+                name: admin.schoolName,
+            },
         });
         if (!campus) {
             return res.status(404).json({
@@ -301,6 +299,34 @@ const updateAdmin = async (req, res) => {
     }
 };
 exports.updateAdmin = updateAdmin;
+// export const fetchAdmins = async (req: Request, res: Response) => {
+//   try {
+//     const admins = await prisma.admin.findMany({
+//       select: {
+//         id: true,
+//         name: true,
+//         email: true,
+//         schoolName: true,
+//         role: true,
+//         created_at: true,
+//       },
+//     });
+//     if (admins.length === 0)
+//       return res
+//         .status(200)
+//         .json({ message: "There are no admin exist!", success: true });
+//     return res.status(200).json({
+//       data: admins,
+//       success: true,
+//       message: "Data fetched successfully!",
+//     });
+//   } catch (error) {
+//     console.error("Error fetching admins:", error);
+//     return res
+//       .status(500)
+//       .json({ message: "Internal server error", success: false });
+//   }
+// };
 const fetchAdmins = async (req, res) => {
     try {
         const admins = await db_config_1.default.admin.findMany({
@@ -313,10 +339,13 @@ const fetchAdmins = async (req, res) => {
                 created_at: true,
             },
         });
-        if (admins.length === 0)
-            return res
-                .status(200)
-                .json({ message: "There are no admin exist!", success: true });
+        if (admins.length === 0) {
+            console.log("No admins found in the database");
+            return res.status(200).json({
+                message: "There are no admin exist!",
+                success: true,
+            });
+        }
         return res.status(200).json({
             data: admins,
             success: true,
@@ -324,10 +353,11 @@ const fetchAdmins = async (req, res) => {
         });
     }
     catch (error) {
-        console.error("Error fetching admins:", error);
-        return res
-            .status(500)
-            .json({ message: "Internal server error", success: false });
+        console.error("Error fetching admins:", error); // Log the full error
+        return res.status(500).json({
+            message: "Internal server error",
+            success: false,
+        });
     }
 };
 exports.fetchAdmins = fetchAdmins;
@@ -594,14 +624,17 @@ const createPayment = async (req, res) => {
         const departmentExist = await db_config_1.default.department.findUnique({
             where: {
                 id: parseInt(department_id),
-            }, include: {
-                students: true
-            }
+            },
+            include: {
+                students: true,
+            },
         });
         if (!departmentExist) {
-            return res.status(404).json({ message: "department does not exist!", success: false, });
+            return res
+                .status(404)
+                .json({ message: "department does not exist!", success: false });
         }
-        const studentsData = departmentExist.students.map((student) => (db_config_1.default.payment.create({
+        const studentsData = departmentExist.students.map((student) => db_config_1.default.payment.create({
             data: {
                 amount: amount,
                 description: description,
@@ -609,19 +642,19 @@ const createPayment = async (req, res) => {
                 localTransactionId: "",
                 title: title,
             },
-        })));
+        }));
         const payment = await Promise.all(studentsData);
         console.log(payment);
         return res.status(200).json({
-            "message": "sucessfully created",
-            success: true
+            message: "sucessfully created",
+            success: true,
         });
     }
     catch (error) {
         console.log(error, "create payment");
         res.status(500).json({
             message: "internal server error",
-            success: false
+            success: false,
         });
     }
 };
@@ -638,7 +671,7 @@ const createPaymentbyYear = async (req, res) => {
             include: {
                 students: {
                     where: {
-                        year: parseInt(year)
+                        year: parseInt(year),
                     },
                     select: {
                         id: true,
@@ -647,7 +680,9 @@ const createPaymentbyYear = async (req, res) => {
             },
         });
         if (!departmentExist)
-            return res.status(404).json({ message: "department does not exist!", success: false, });
+            return res
+                .status(404)
+                .json({ message: "department does not exist!", success: false });
         const studentsData = departmentExist.students.map((student) => {
             return db_config_1.default.payment.create({
                 data: {
@@ -661,15 +696,15 @@ const createPaymentbyYear = async (req, res) => {
         });
         const payment = await Promise.all(studentsData);
         return res.status(200).json({
-            "message": "sucessfully created",
-            success: true
+            message: "sucessfully created",
+            success: true,
         });
     }
     catch (error) {
         console.log(error, "create payment");
         res.status(500).json({
             message: "internal server error",
-            success: false
+            success: false,
         });
     }
 };
