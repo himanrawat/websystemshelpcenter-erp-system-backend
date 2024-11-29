@@ -1,0 +1,10 @@
+prisma Database CMD:
+
+
+--npx prisma db push 
+
+--npx prisma generate
+
+DataBase:
+
+-npx prisma studio
