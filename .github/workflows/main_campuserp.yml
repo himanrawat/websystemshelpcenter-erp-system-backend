@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     environment:
-      name: "production" # Corrected here
+      name: "production" # Corrected environment name (lowercase)
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
@@ -51,6 +51,6 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: "CampusERP"
-          slot-name: "production" # Corrected here
+          slot-name: "" # Use an empty string for the default production slot
           package: .
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_65256239E4064D2EA9664DED3D510E5E }}
