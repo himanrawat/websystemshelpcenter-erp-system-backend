@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const adminExist_1 = require("../middleware/adminExist");
+const resultController_1 = require("../controller/resultController");
+const router = (0, express_1.Router)();
+router.post("/campus/:campusId/reg", adminExist_1.adminExist, resultController_1.createResults);
+router.put("/campus/:campusId/:studentId", adminExist_1.adminExist, resultController_1.updateFullResult);
+router.patch('/campus/:campusId/:studentId/:subjectId', adminExist_1.adminExist, resultController_1.updateResultPartial);
+router.get("/campus/:campusId/results", adminExist_1.adminExist, resultController_1.getAllResults);
+router.delete("/campus/:campusId/:studentId", adminExist_1.adminExist, resultController_1.deleteResults);
+router.delete("/campus/:campusId/:resultId", adminExist_1.adminExist, resultController_1.deleteResultPartial);
+router.get("/campus/student/:studentId", resultController_1.getResultById);
+exports.default = router;

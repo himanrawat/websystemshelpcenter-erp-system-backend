@@ -1,0 +1,24 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const router = express_1.default.Router();
+const adminController_1 = require("../controller/adminController");
+const auth_1 = require("../middleware/auth");
+const validator_1 = require("../middleware/validator");
+router.post("/reg", validator_1.validateUser, validator_1.validate, adminController_1.createAdmin);
+router.put("/:id", adminController_1.updateAdmin);
+router.get("/", adminController_1.fetchAdmins);
+router.get("/:id", auth_1.verifyToken, adminController_1.showAdminById);
+router.delete("/:id", adminController_1.deleteAdmin);
+router.post("/login", adminController_1.loginAdmin);
+router.post("/forget-password", adminController_1.forgetPassword);
+router.post("/reset-password/:token/:id", auth_1.isResetTokenValid, adminController_1.resetPassword);
+router.post("/verify-email/:id", auth_1.isOtpValid, adminController_1.verifyEmail);
+router.post("/logout", adminController_1.logout);
+router.post("/support", adminController_1.createSupport);
+router.put("/:dep_id/:year/payment", adminController_1.createPaymentbyYear);
+router.post("/:dep_id/payment", adminController_1.createPayment);
+exports.default = router;

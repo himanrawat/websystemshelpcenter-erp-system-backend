@@ -1,0 +1,22 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = __importDefault(require("express"));
+const router = express_1.default.Router();
+const teacherController_1 = require("../controller/teacherController");
+const adminController_1 = require("../controller/adminController");
+const validator_1 = require("../middleware/validator");
+const adminExist_1 = require("../middleware/adminExist");
+router.post("/:campusId/reg", validator_1.validateUser, validator_1.validate, teacherController_1.createTeacherbyId);
+router.post("/:campusId/regbyname", validator_1.validateUser, validator_1.validate, teacherController_1.createTeacherbyName);
+router.post("/login", teacherController_1.loginTeacher);
+router.get("/:campusId/fetch/:id", adminExist_1.adminExist, teacherController_1.getTeacher);
+router.get("/:campusId/fetchAll", adminExist_1.adminExist, teacherController_1.showAllTeachers);
+router.put("/:campusId/update/:id", adminExist_1.adminExist, teacherController_1.updateTeacher);
+router.delete("/:campusId/delete/:id", adminExist_1.adminExist, teacherController_1.deleteTeacher);
+router.delete("/:campusId/deleteAllTeacher", adminExist_1.adminExist, teacherController_1.deleteAllTeacher);
+router.post("/logout", adminController_1.logout);
+router.post("/support", adminController_1.createSupport);
+exports.default = router;
