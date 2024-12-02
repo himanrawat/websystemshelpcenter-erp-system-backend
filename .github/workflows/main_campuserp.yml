@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - CampusERP
+name: Build and Deploy Node.js App to Azure Web App - CampusERP
 
 permissions:
   id-token: write
@@ -6,7 +6,8 @@ permissions:
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
@@ -15,14 +16,15 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: npm install
 
       - name: Build TypeScript
@@ -35,7 +37,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Prepare deployment package
+      - name: Prepare Deployment Package
         run: |
           mkdir deploy
           cp -r dist deploy/
@@ -46,13 +48,13 @@ jobs:
           cd deploy
           npm install --only=production
           cd ..
-          zip -r deploy.zip deploy/*
+          zip -r release.zip deploy/*
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Artifact for Deployment
+        uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: deploy.zip
+          path: release.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -62,20 +64,26 @@ jobs:
       url: https://campuserp.azurewebsites.net
 
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
         with:
           name: node-app
 
-      - name: Azure Login
+      - name: Extract Artifact
+        run: |
+          unzip release.zip
+          mv deploy/* .
+          rm -rf deploy
+
+      - name: Azure CLI Login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure
+      - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v2
         with:
           app-name: "CampusERP"
-          package: deploy.zip
+          package: .
