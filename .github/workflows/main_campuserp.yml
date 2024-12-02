@@ -23,8 +23,9 @@ jobs:
         with:
           node-version: "18.x"
 
-      - name: Install dependencies
+      - name: Install dependencies and build
         run: |
+          rm -rf node_modules
           npm install
           npm run build
         env:
@@ -35,16 +36,14 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Create deployment package
       - name: Create deployment package
         run: |
-          mkdir -p deploy
-          cp -r dist deploy/
-          cp package*.json deploy/
-          cp web.config deploy/
-          cp -r prisma deploy/
-          cd deploy && npm install --production
-          cd .. && zip -r deploy.zip deploy/*
+          cp -r node_modules dist/
+          cp package*.json dist/
+          cp web.config dist/
+          cp -r prisma dist/
+          cd dist
+          zip -r ../deploy.zip .
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
