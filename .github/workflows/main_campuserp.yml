@@ -6,8 +6,7 @@ permissions:
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -23,11 +22,11 @@ jobs:
         with:
           node-version: "18.x"
 
-      - name: Install dependencies and build
-        run: |
-          rm -rf node_modules
-          npm install
-          npm run build
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build TypeScript
+        run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -36,17 +35,21 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Create deployment package
+      - name: Prepare deployment package
         run: |
-          cp -r node_modules dist/
-          cp package*.json dist/
-          cp web.config dist/
-          cp -r prisma dist/
-          cd dist
-          zip -r ../deploy.zip .
+          mkdir deploy
+          cp -r dist deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cp web.config deploy/
+          cp -r prisma deploy/
+          cd deploy
+          npm install --only=production
+          cd ..
+          zip -r deploy.zip deploy/*
 
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v3
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: deploy.zip
@@ -59,22 +62,20 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v3
+      - name: Download artifact
+        uses: actions/download-artifact@v4
         with:
           name: node-app
 
-      - name: "Az CLI login"
+      - name: Azure Login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: "Deploy to Azure WebApp"
-        id: deploy-to-webapp
+      - name: Deploy to Azure
         uses: azure/webapps-deploy@v2
         with:
           app-name: "CampusERP"
-          slot-name: "production"
           package: deploy.zip
