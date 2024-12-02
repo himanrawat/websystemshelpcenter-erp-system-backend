@@ -1,4 +1,4 @@
-name: Build and Deploy Node.js App to Azure Web App - CampusERP
+name: Build and deploy Node.js app to Azure Web App - CampusERP
 
 permissions:
   id-token: write
@@ -16,40 +16,41 @@ jobs:
     environment: production
 
     steps:
-      # Step 1: Checkout the repository
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      # Step 3: Install dependencies and build
-      - name: Install Dependencies and Build
+      - name: Install dependencies
         run: |
           npm install
           npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Step 4: Generate Prisma Client
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      # Step 5: Package the build as a zip file
-      - name: Package Artifact for Deployment
-        run: zip -r release.zip ./*
+      # Create deployment package
+      - name: Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r dist deploy/
+          cp package*.json deploy/
+          cp web.config deploy/
+          cp -r prisma deploy/
+          cd deploy && npm install --production
+          cd .. && zip -r deploy.zip deploy/*
 
-      # Step 6: Upload the artifact for deployment
-      - name: Upload Artifact for Deployment Job
+      - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
-          path: release.zip
+          path: deploy.zip
 
   deploy:
     runs-on: ubuntu-latest
@@ -59,29 +60,22 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      # Step 1: Download the artifact from the build job
-      - name: Download Artifact from Build Job
+      - name: Download artifact from build job
         uses: actions/download-artifact@v3
         with:
           name: node-app
 
-      # Step 2: Unzip the artifact
-      - name: Extract Artifact
-        run: unzip release.zip
-
-      # Step 3: Log in to Azure CLI
-      - name: Azure CLI Login
+      - name: "Az CLI login"
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 4: Deploy the app to Azure Web App
-      - name: Deploy to Azure Web App
+      - name: "Deploy to Azure WebApp"
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: "CampusERP"
           slot-name: "production"
-          package: .
+          package: deploy.zip
