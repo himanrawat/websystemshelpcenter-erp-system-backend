@@ -1,4 +1,4 @@
-name: Build and deploy Node.js app to Azure Web App - CampusERP
+name: Build and Deploy Node.js App to Azure Web App - CampusERP
 
 permissions:
   id-token: write
@@ -16,29 +16,36 @@ jobs:
     environment: production
 
     steps:
-      - uses: actions/checkout@v4
+      # Step 1: Checkout the repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      # Step 2: Set up Node.js
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "18.x"
 
-      - name: npm install and build
+      # Step 3: Install dependencies and build
+      - name: Install Dependencies and Build
         run: |
           npm install
           npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      # Step 4: Generate Prisma Client
       - name: Generate Prisma Client
         run: npx prisma generate
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Zip artifact for deployment
-        run: zip release.zip ./* -r
+      # Step 5: Package the build as a zip file
+      - name: Package Artifact for Deployment
+        run: zip -r release.zip ./*
 
-      - name: Upload artifact for deployment job
+      # Step 6: Upload the artifact for deployment
+      - name: Upload Artifact for Deployment Job
         uses: actions/upload-artifact@v3
         with:
           name: node-app
@@ -52,22 +59,26 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      - name: Download artifact from build job
+      # Step 1: Download the artifact from the build job
+      - name: Download Artifact from Build Job
         uses: actions/download-artifact@v3
         with:
           name: node-app
 
-      - name: Unzip artifact for deployment
+      # Step 2: Unzip the artifact
+      - name: Extract Artifact
         run: unzip release.zip
 
-      - name: "Az CLI login"
+      # Step 3: Log in to Azure CLI
+      - name: Azure CLI Login
         uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: "Deploy to Azure WebApp"
+      # Step 4: Deploy the app to Azure Web App
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
