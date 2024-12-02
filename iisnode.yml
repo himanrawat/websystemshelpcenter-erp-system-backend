@@ -1,37 +1,37 @@
-# General Configuration
-node_env: production                # Set the environment for the Node.js process (e.g., production, development)
-nodeProcessCountPerApplication: 2   # Number of Node.js processes per application
-maxConcurrentRequestsPerProcess: 512  # Maximum concurrent requests a single process can handle
+# General Node.js Configuration
+node_env: production                  # Set the environment for the Node.js application
+nodeProcessCountPerApplication: 2     # Number of Node.js processes per application
+maxConcurrentRequestsPerProcess: 512  # Maximum concurrent requests per Node.js process
 
 # Logging Configuration
-loggingEnabled: true                # Enable logging for stdout and stderr
-logDirectory: logs                  # Directory for logs (relative to the application root)
-maxLogFileSizeInKB: 128             # Maximum size of a single log file in KB
-maxTotalLogFileSizeInKB: 1024       # Maximum total size of all log files in KB
-maxLogFiles: 10                     # Maximum number of log files to retain
+loggingEnabled: true                  # Enable logging
+logDirectory: logs                    # Directory for logs
+maxLogFileSizeInKB: 128               # Maximum size of a single log file (in KB)
+maxTotalLogFileSizeInKB: 1024         # Maximum total size of all log files (in KB)
+maxLogFiles: 10                       # Maximum number of log files to retain
 
-# Debugging Configuration
-debuggingEnabled: false             # Disable the built-in debugger
-debugHeaderEnabled: false           # Disable debug headers in HTTP responses
-debuggerPortRange: 5058-6058        # Range of ports for the debugger
+# Debugging (if needed)
+debuggingEnabled: false               # Disable built-in debugger
+debugHeaderEnabled: false             # Disable debug headers in HTTP responses
+debuggerPortRange: 5058-6058          # Range of ports for debugging
 
 # Graceful Shutdown
-gracefulShutdownTimeout: 60000      # Time in milliseconds for active requests to finish during process recycling
+gracefulShutdownTimeout: 60000        # Timeout for gracefully shutting down Node.js processes (in ms)
 
-# Watched Files
-watchedFiles: "*.js;*.json"         # Files to monitor for changes that trigger an application recycle
-uncFileChangesPollingInterval: 5000 # Polling interval for UNC file changes (in milliseconds)
+# File Watching for Hot Reload (if enabled)
+watchedFiles: "*.js;*.json"           # Files to monitor for changes
+uncFileChangesPollingInterval: 5000   # Polling interval for UNC file changes (in ms)
 
-# Performance Configuration
-initialRequestBufferSize: 4096      # Initial buffer size for HTTP requests (in bytes)
-maxRequestBufferSize: 65536         # Maximum buffer size for HTTP requests (in bytes)
-maxNamedPipeConnectionPoolSize: 256 # Maximum number of connections in the named pipe connection pool
-maxNamedPipePooledConnectionAge: 30000 # Maximum age of pooled connections (in milliseconds)
-flushResponse: false                # Disable immediate flushing of HTTP response body chunks
+# Performance Optimization
+initialRequestBufferSize: 4096        # Initial HTTP request buffer size (in bytes)
+maxRequestBufferSize: 65536           # Maximum HTTP request buffer size (in bytes)
+maxNamedPipeConnectionPoolSize: 256   # Maximum named pipe connections in the pool
+maxNamedPipePooledConnectionAge: 30000 # Maximum age of pooled connections (in ms)
 
-# Security Configuration
-enableXFF: false                    # Disable adding/modifying X-Forwarded-For headers
-promoteServerVars: ""               # No IIS server variables to propagate as HTTP headers
+# Advanced Configuration
+flushResponse: false                  # Disable immediate flushing of HTTP response body chunks
+enableXFF: false                      # Disable modifying X-Forwarded-For headers
+promoteServerVars: ""                 # No IIS server variables to promote
 
-# Configuration Overrides File
-configOverrides: iisnode.custom.yml # Optional YAML file for further overrides
+# Configuration Overrides
+configOverrides: iisnode.custom.yml   # (Optional) External configuration file for overrides
