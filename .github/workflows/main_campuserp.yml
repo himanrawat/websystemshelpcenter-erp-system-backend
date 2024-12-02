@@ -1,5 +1,9 @@
 name: Build and deploy Node.js app to Azure Web App - CampusERP
 
+permissions:
+  id-token: write
+  contents: read
+
 on:
   push:
     branches:
