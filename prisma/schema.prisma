@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,311 +7,298 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model Campus{
-  id Int @id @default(autoincrement())
-  name String
-  logo String @default("")
+model Campus {
+  id          Int       @id @default(autoincrement())
+  name        String
+  logo        String    @default("")
+  location    String    @default("")
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
   foundedYear Int
-  branch Branch[]
-  location String @default("")
-  created_at DateTime @default(now())
-  updated_at  DateTime?  @updatedAt
-
+  branch      Branch[]
 }
 
-model Branch{
-  id Int @id @default(autoincrement())
-  name String
-  campusId Int
-  logo String @default("")
-  location String @default("")
-  subscriptionExpiryDate DateTime @default(now())
-  campus Campus? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  created_at DateTime @default(now())
-  updated_at  DateTime?  @updatedAt
-  admin Admin[]
+model Branch {
+  id                     Int       @id @default(autoincrement())
+  name                   String
+  campusId               Int
+  location               String    @default("")
+  created_at             DateTime  @default(now())
+  updated_at             DateTime? @updatedAt
+  subscriptionExpiryDate DateTime  @default(now())
+  logo                   String    @default("")
+  admin                  Admin[]
+  campus                 Campus    @relation(fields: [campusId], references: [id], onDelete: Cascade)
 }
 
-model Admin{
-  id Int @id @default(autoincrement())
-  name String
-  email String @unique
-  password String
-  schoolName String @default("")
-  photo String @default("")
-  branchName String @default("")
-  branchId Int
-  branch Branch? @relation(fields: [branchId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  role String @default("admin")
-  isVerified Boolean @default(false)
-  created_at DateTime @default(now())
-  updated_at  DateTime?  @updatedAt
-  resetToken ResetToken?
-  otpToken OtpToken?
-  teachers Teacher[]
-  students Student[]
-  departments Department[]
-  holidays Holiday[]
-  events Event[]
-  libraries Library[]
+model Admin {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  email             String              @unique
+  password          String
+  schoolName        String              @default("")
+  role              String              @default("admin")
+  created_at        DateTime            @default(now())
+  updated_at        DateTime?           @updatedAt
+  isVerified        Boolean             @default(false)
+  branchId          Int
+  photo             String              @default("")
+  branchName        String              @default("")
+  branch            Branch              @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  departments       Department[]
+  events            Event[]
   facultyAttendance FacultyAttendance[]
-  // subscriptionExpiryDate DateTime @default(now())
+  holidays          Holiday[]
+  libraries         Library[]
+  otpToken          OtpToken?
+  resetToken        ResetToken?
+  students          Student[]
+  teachers          Teacher[]
 }
 
 model ResetToken {
-  id Int @id @default(autoincrement())
-  owner Admin? @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  ownerId Int? @unique
-  token String
-  expiresAt  DateTime  
-  created_at DateTime @default(now())
-  updated_at  DateTime?  @updatedAt
+  id         Int       @id @default(autoincrement())
+  ownerId    Int?      @unique
+  token      String
+  expiresAt  DateTime
+  created_at DateTime  @default(now())
+  updated_at DateTime? @updatedAt
+  owner      Admin?    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 }
 
 model OtpToken {
-  id Int @id @default(autoincrement())
-  owner Admin? @relation(fields: [email], references: [email], onDelete: Cascade)
-  email String? @unique
-  token String
-  expiresAt  DateTime  
+  id         Int      @id @default(autoincrement())
+  email      String?  @unique
+  token      String
+  expiresAt  DateTime
   created_at DateTime @default(now())
+  owner      Admin?   @relation(fields: [email], references: [email], onDelete: Cascade)
 }
 
-model Teacher{
-  id Int @id @default(autoincrement())
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  campusId Int
-  name String
-  email String @unique
-  password String
-  photo String?
-  role String @default("teacher")
-  AdditionalRole String @default("teacher")
-  // subject String?
-  // teaching_class String?
-  gender String
-  contactNumber BigInt
-  dob String
-  // department String
+model Teacher {
+  id                Int         @id @default(autoincrement())
+  campusId          Int
+  name              String
+  email             String      @unique
+  password          String
+  role              String      @default("teacher")
+  gender            String
+  contactNumber     BigInt
+  dob               String
   permanent_address String
-  currentAddress String
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
-  subject Subject[]
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId Int?
-  leave Leave[]
+  currentAddress    String
+  created_at        DateTime    @default(now())
+  updated_at        DateTime?   @updatedAt
+  departmentId      Int?
+  AdditionalRole    String      @default("teacher")
+  photo             String?
+  leave             Leave[]
+  subject           Subject[]
+  campus            Admin       @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  department        Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 }
 
-model Student{
-  id Int @id @default(autoincrement())
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  campusId Int
-  name String
-  rollNo Int
-  email String @unique
-  password String
-  role String @default("student")
-  gender String
-  contactNumber BigInt
-  dob String
-  photo String?
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId Int?
-  year Int @default(0)
-  marks Marks[]
-  permanent_address String
-  currentAddress String
-  fatherName String
-  motherName String
+model Student {
+  id                  Int          @id @default(autoincrement())
+  campusId            Int
+  name                String
+  rollNo              Int
+  email               String       @unique
+  password            String
+  role                String       @default("student")
+  gender              String
+  contactNumber       BigInt
+  dob                 String
+  permanent_address   String
+  currentAddress      String
+  fatherName          String
+  motherName          String
   fatherContactNumber BigInt
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt 
-  attendance Attendance[]
-  payment Payment[]
+  created_at          DateTime     @default(now())
+  updated_at          DateTime?    @updatedAt
+  departmentId        Int?
+  photo               String?
+  year                Int          @default(0)
+  attendance          Attendance[]
+  marks               Marks[]
+  payment             Payment[]
+  campus              Admin        @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  department          Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 }
 
-model Subject{
-  id Int @id @default(autoincrement())
-  subjectName String
-  subjectCode String 
-  // department String
-  // totalLectures Int
-  attendance Attendance[]
-  teacher Teacher? @relation(fields: [teacherId], references: [id])
-  teacherId Int?
-  marks Marks[]
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
-  departmentId Int?
-  totalLectureTaken Int @default(0)
+model Subject {
+  id                Int          @id @default(autoincrement())
+  subjectName       String
+  subjectCode       String
+  teacherId         Int?
+  departmentId      Int?
+  totalLectureTaken Int          @default(0)
+  attendance        Attendance[]
+  marks             Marks[]
+  department        Department?  @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  teacher           Teacher?     @relation(fields: [teacherId], references: [id])
 }
 
-model Attendance{
-  id Int @id @default(autoincrement())
-  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
+model Attendance {
+  id        Int     @id @default(autoincrement())
   studentId Int
-  // totalLectureTaken Int @default(0)
-  // totalLectureAttended Int @default(0)
-  subject Subject? @relation(fields: [subjectId],references: [id], onDelete: Cascade)
   subjectId Int
-  date String
-  status String
+  date      String
+  status    String
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject   Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
 
-model Holiday{
-  id Int @id @default(autoincrement())
-  campusId Int
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  date DateTime @db.Date @unique
-  reason String
-  teacherId Int
-  created_at DateTime @default(now())
+model Holiday {
+  id         Int       @id @default(autoincrement())
+  date       DateTime  @unique @db.Date
+  reason     String
+  teacherId  Int
+  created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
+  campusId   Int
+  campus     Admin     @relation(fields: [campusId], references: [id], onDelete: Cascade)
 }
 
-model Marks{
-  id Int @id @default(autoincrement())
-  totalMarks Int @default(100)
-  scoredMarks Int @default(-1)
-  grade      String
-  feedback String @default("")
-  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  subjectId Int
-  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId Int
+model Marks {
+  id          Int     @id @default(autoincrement())
+  subjectId   Int
+  studentId   Int
+  scoredMarks Int     @default(-1)
+  totalMarks  Int     @default(100)
+  grade       String
+  feedback    String  @default("")
+  student     Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject     Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
 }
 
-model Department{
-  id Int @id @default(autoincrement())
-  name String @unique
-  code String @default("")
-  subjects Subject[]
+model Department {
+  id       Int       @id @default(autoincrement())
+  name     String    @unique
+  code     String    @default("")
+  campusId Int
+  campus   Admin     @relation(fields: [campusId], references: [id], onDelete: Cascade)
   students Student[]
+  subjects Subject[]
   teachers Teacher[]
-  tests Test[]
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  campusId Int
+  tests    Test[]
 }
 
-model Test{
-  id Int @id @default(autoincrement())
-  test String
-  subjectCode String
-  department Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+model Test {
+  id           Int         @id @default(autoincrement())
+  test         String
+  subjectCode  String
   departmentId Int?
-  totalMarks Int @default(100)
-  year String
-  date String
+  totalMarks   Int         @default(100)
+  year         String
+  date         String
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
 }
 
-model Event{
-  id Int @id @default(autoincrement())
-  campusId Int
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  title String
+model Event {
+  id          Int       @id @default(autoincrement())
+  title       String
   description String
-  date DateTime
-  photo String?
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
+  date        DateTime
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  photo       String?
+  campusId    Int
+  campus      Admin     @relation(fields: [campusId], references: [id], onDelete: Cascade)
 }
 
-model FacultyAttendance{
-  id Int @id @default(autoincrement())
-  adminId Int
-  admin Admin? @relation(fields: [adminId],references:[id],onDelete:Cascade,onUpdate:Cascade)
-  date DateTime @db.Date @unique
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
+model FacultyAttendance {
+  id              Int       @id @default(autoincrement())
+  date            DateTime  @unique @db.Date
+  created_at      DateTime  @default(now())
+  updated_at      DateTime? @updatedAt
   presentTeachers Json
+  adminId         Int
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
 }
 
-model Library{
-  id Int @id @default(autoincrement())
-  campusId Int
-  campus Admin? @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  file String
-  name String
-  teacherId Int?
-  subject String?
+model Library {
+  id          Int       @id @default(autoincrement())
+  file        String
+  name        String
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  subject     String?
+  teacherId   Int?
   teacherName String?
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
+  campusId    Int
+  campus      Admin     @relation(fields: [campusId], references: [id], onDelete: Cascade)
 }
 
-model Leave{
-  id Int @id @default(autoincrement())
-  applyDate DateTime @db.Date
-  dateFrom DateTime @db.Date
-  dateTo DateTime @db.Date
-  noOfDays Int
-  reason String
-  name String?
-  status String @default("pending")
-  teacherId Int
-  teacher Teacher? @relation(fields:[teacherId], references:[id],onDelete:Cascade, onUpdate: Cascade)
-  created_at DateTime @default(now())
+model Leave {
+  id         Int       @id @default(autoincrement())
+  applyDate  DateTime  @db.Date
+  dateFrom   DateTime  @db.Date
+  dateTo     DateTime  @db.Date
+  noOfDays   Int
+  reason     String
+  status     String    @default("pending")
+  teacherId  Int
+  created_at DateTime  @default(now())
   updated_at DateTime? @updatedAt
+  name       String?
+  teacher    Teacher   @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 }
 
-model TimeTable{
-  id Int @id @default(autoincrement())
-  departmentId Int @unique
+model TimeTable {
+  id             Int     @id @default(autoincrement())
+  departmentId   Int     @unique
   departmentName String?
-  monday Json?
-  tuesday Json?
-  wednesday Json?
-  thursday Json?
-  friday Json?
-  saturday Json?
+  monday         Json?
+  tuesday        Json?
+  wednesday      Json?
+  thursday       Json?
+  friday         Json?
+  saturday       Json?
 }
 
-model Support{
-  id Int @id @default(autoincrement())
-  complaintNo String @unique
-  name String
-  contactNo BigInt
-  email String
-  query String
-  type String @default("")
-  department String @default("")
-  year Int @default(0)
-  photo String?
-  errorrole String?
-  errorpage String?
-  status String @default("pending")
-  reply String?
-  campusName String @default("")
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
+model Support {
+  id          Int       @id @default(autoincrement())
+  complaintNo String    @unique
+  name        String
+  contactNo   BigInt
+  email       String
+  query       String
+  campusName  String    @default("")
+  created_at  DateTime  @default(now())
+  department  String    @default("")
+  errorpage   String?
+  errorrole   String?
+  photo       String?
+  reply       String?
+  status      String    @default("pending")
+  type        String    @default("")
+  updated_at  DateTime? @updatedAt
+  year        Int       @default(0)
 }
 
-model Payment{
-  id Int @id @default(autoincrement())
-  amount Float
+model Payment {
+  id                 Int              @id @default(autoincrement())
+  amount             Float
+  description        String
+  localTransactionId String
+  title              String
+  status             String           @default("pending")
+  studentId          Int
+  created_at         DateTime         @default(now())
+  updated_at         DateTime?        @updatedAt
+  student            Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  paymentdetails     Paymentdetails[]
+}
+
+model Paymentdetails {
+  id          Int       @id @default(autoincrement())
+  paymentId   Int?
+  message     String
+  status      String    @default("pending")
+  amount      Float
   description String
-  localTransactionId String 
-  title String 
-  status String @default("pending")
-  studentId Int
-  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
-  paymentdetails Paymentdetails[] 
+  created_at  DateTime  @default(now())
+  updated_at  DateTime? @updatedAt
+  payments    Payment?  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 }
-
-
-model Paymentdetails{
-  id Int @id @default(autoincrement())
-  paymentId Int?
-  payments Payment? @relation(fields: [paymentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  message String
-  status String @default("pending")
-  amount Float
-  description String
-  created_at DateTime @default(now())
-  updated_at DateTime? @updatedAt
-
-}
-

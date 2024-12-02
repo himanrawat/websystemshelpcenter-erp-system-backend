@@ -15,7 +15,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@prisma/client": "^6.0.0",
+    "@prisma/client": "^6.0.1",
     "@types/express-validator": "^3.0.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.6",
