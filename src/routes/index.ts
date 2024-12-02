@@ -16,6 +16,7 @@ import PaymentRoutes from "./paymentRoutes";
 import SupportRoutes from "./supportRoutes";
 import HolidayRoutes from "./holidayRouts";
 import CampusRoutes from "./campusRoute";
+import testRoute from "./testRoute";
 
 // Using Routes
 router.use("/api/v1/campus", CampusRoutes);
@@ -33,5 +34,8 @@ router.use("/api/v1/timeTable", TimeTableRoutes);
 router.use("/api/v1/payment", PaymentRoutes);
 router.use("/api/v1/support", SupportRoutes);
 router.use("/api/v1/holiday", HolidayRoutes);
+
+// Add test routes
+router.use("/api/v1/test", testRoute);
 
 export default router;
