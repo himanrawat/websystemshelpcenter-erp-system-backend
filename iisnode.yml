@@ -1,37 +1,18 @@
-# General Node.js Configuration
-node_env: production                  # Set the environment for the Node.js application
-nodeProcessCountPerApplication: 2     # Number of Node.js processes per application
-maxConcurrentRequestsPerProcess: 512  # Maximum concurrent requests per Node.js process
+# Use a specific Node.js version
+nodeProcessCommandLine: "node"
 
-# Logging Configuration
-loggingEnabled: true                  # Enable logging
-logDirectory: logs                    # Directory for logs
-maxLogFileSizeInKB: 128               # Maximum size of a single log file (in KB)
-maxTotalLogFileSizeInKB: 1024         # Maximum total size of all log files (in KB)
-maxLogFiles: 10                       # Maximum number of log files to retain
+# Enable logging to capture errors and output
+loggingEnabled: true
+logDirectory: "iisnode"
 
-# Debugging (if needed)
-debuggingEnabled: false               # Disable built-in debugger
-debugHeaderEnabled: false             # Disable debug headers in HTTP responses
-debuggerPortRange: 5058-6058          # Range of ports for debugging
+# Increase the maximum number of concurrent requests
+maxConcurrentRequestsPerProcess: 1000
 
-# Graceful Shutdown
-gracefulShutdownTimeout: 60000        # Timeout for gracefully shutting down Node.js processes (in ms)
+# Disable watching files for changes (recommended in production)
+watchFiles: false
 
-# File Watching for Hot Reload (if enabled)
-watchedFiles: "*.js;*.json"           # Files to monitor for changes
-uncFileChangesPollingInterval: 5000   # Polling interval for UNC file changes (in ms)
+# Time before restarting the process (in milliseconds)
+gracefulShutdownTimeout: 3000
 
-# Performance Optimization
-initialRequestBufferSize: 4096        # Initial HTTP request buffer size (in bytes)
-maxRequestBufferSize: 65536           # Maximum HTTP request buffer size (in bytes)
-maxNamedPipeConnectionPoolSize: 256   # Maximum named pipe connections in the pool
-maxNamedPipePooledConnectionAge: 30000 # Maximum age of pooled connections (in ms)
-
-# Advanced Configuration
-flushResponse: false                  # Disable immediate flushing of HTTP response body chunks
-enableXFF: false                      # Disable modifying X-Forwarded-For headers
-promoteServerVars: ""                 # No IIS server variables to promote
-
-# Configuration Overrides
-configOverrides: iisnode.custom.yml   # (Optional) External configuration file for overrides
+# Enable debugging
+debuggingEnabled: true
