@@ -97,8 +97,8 @@ app.use((err, req, res, next) => {
 });
 // Start the server
 app.listen(PORT, () => {
-    console.log(`Server environment: ${process.env.NODE_ENV || "development"}`);
-    console.log(`Server is running on http://localhost:${PORT}`);
-    console.log("Database URL configured:", !!process.env.DATABASE_URL);
-    console.log("JWT Secret configured:", !!process.env.JWT_SECRET);
+    // console.log(`Server environment: ${process.env.NODE_ENV || "development"}`);
+    // console.log(`Server is running on http://localhost:${PORT}`);
+    // console.log("Database URL configured:", !!process.env.DATABASE_URL);
+    // console.log("JWT Secret configured:", !!process.env.JWT_SECRET);
 });

@@ -21,6 +21,7 @@ const paymentRoutes_1 = __importDefault(require("./paymentRoutes"));
 const supportRoutes_1 = __importDefault(require("./supportRoutes"));
 const holidayRouts_1 = __importDefault(require("./holidayRouts"));
 const campusRoute_1 = __importDefault(require("./campusRoute"));
+const testRoute_1 = __importDefault(require("./testRoute"));
 // Using Routes
 router.use("/api/v1/campus", campusRoute_1.default);
 router.use("/api/v1/admin", adminRoutes_1.default);
@@ -37,4 +38,6 @@ router.use("/api/v1/timeTable", timeTableRoutes_1.default);
 router.use("/api/v1/payment", paymentRoutes_1.default);
 router.use("/api/v1/support", supportRoutes_1.default);
 router.use("/api/v1/holiday", holidayRouts_1.default);
+// Add test routes
+router.use("/api/v1/test", testRoute_1.default);
 exports.default = router;
