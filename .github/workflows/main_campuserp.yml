@@ -22,10 +22,13 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "18.17.1" # Explicit version
+          cache: "npm" # Add caching
 
       - name: Install Dependencies
-        run: npm install
+        run: |
+          npm install -g npm@latest  # Ensure latest npm
+          npm install
 
       - name: Build TypeScript
         run: npm run build
@@ -44,9 +47,10 @@ jobs:
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
+          cp .node-version deploy/  # Add node version file
           cp -r prisma deploy/
           cd deploy
-          npm install --only=production
+          npm install --only=production --no-optional
           cd ..
           zip -r release.zip deploy/*
 
@@ -83,7 +87,16 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy to Azure Web App
+        id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
           app-name: "CampusERP"
           package: .
+
+      - name: Configure App Settings
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az webapp config set --name CampusERP --resource-group CampusERP_group \
+              --linux-fx-version "NODE|18.17.1" \
+              --startup-file "dist/index.js"
