@@ -56,16 +56,17 @@ jobs:
         run: |
           mkdir deploy
           cp -r dist deploy/
-          cp -r prisma deploy/  # Copy prisma directory first
+          cp -r prisma deploy/
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
           cp iisnode.yml deploy/
+          cp startup.js deploy/  # Include startup.js
           cd deploy
           npm install --omit=dev
-          npm install prisma --save-dev  # Install prisma as dev dependency for generation
-          npx prisma generate  # Generate Prisma client in the deploy directory
-          npm uninstall prisma  # Remove prisma after generation
+          npm install prisma --save-dev
+          npx prisma generate
+          npm uninstall prisma
           cd ..
           zip -r release.zip deploy/*
 
@@ -112,21 +113,21 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            # Set Node.js version and other configurations
+            # Set Node.js version and other configurations for Windows App Service
             az webapp config set --name CampusERP --resource-group CampusERP_group \
-              --windows-fx-version "NODE|18.19.1"
+              --node-version "18.19.1"
 
             # Set application settings
-            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
-              WEBSITE_NODE_DEFAULT_VERSION=18.19.1 \
-              NODE_ENV=production \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group  --settings \
+                WEBSITE_NODE_DEFAULT_VERSION=18.19.1 \
+                NODE_ENV=production \
+                SCM_DO_BUILD_DURING_DEPLOYMENT=false
 
             # Enable logging for troubleshooting
             az webapp log config --name CampusERP --resource-group CampusERP_group \
               --web-server-logging filesystem \
               --detailed-error-messages true \
-              --failed-request-tracing true
+              --failed-request-tracing true\
 
             # Restart the web app to apply changes
             az webapp restart --name CampusERP --resource-group CampusERP_group
