@@ -77,7 +77,7 @@ jobs:
         shell: powershell
         run: |
           # Set Node version and web app configurations
-          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|~18"
+          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1"
 
           # Configure app settings
           az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
