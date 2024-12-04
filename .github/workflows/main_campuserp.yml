@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.19.0"
+          node-version: "18.19.1"
           cache: "npm"
 
       - name: Install Dependencies
@@ -38,20 +38,16 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Prepare Deployment Package
-        run: |
-          mkdir deploy
-          xcopy dist deploy\dist /E/H/C/I
-          xcopy node_modules deploy\node_modules /E/H/C/I
-          xcopy prisma deploy\prisma /E/H/C/I
-          copy package.json deploy\
-          copy package-lock.json deploy\
-          copy web.config deploy\
-          copy iisnode.yml deploy\
-        shell: cmd
-
-      - name: Create deployment archive
-        run: Compress-Archive -Path deploy\* -DestinationPath release.zip
         shell: powershell
+        run: |
+          copy dist\* .
+          xcopy node_modules . /E/H/C/I
+          xcopy prisma . /E/H/C/I
+          copy package.json .
+          copy package-lock.json .
+          copy web.config .
+          copy iisnode.yml .
+          Compress-Archive -Path * -DestinationPath release.zip -Force
 
       - name: Upload Artifact for Deployment
         uses: actions/upload-artifact@v3
@@ -76,39 +72,37 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Configure Azure Web App
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Configure deployment settings
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITE_RUN_FROM_PACKAGE=0
+
+            # Set Node version and other configurations
+            az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1" --web-sockets-enabled true
+
+            # Set application settings
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings WEBSITE_NODE_DEFAULT_VERSION=18.19.1 NODE_ENV=production DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: "CampusERP"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: release.zip
+          type: "zip"
 
-      - name: Configure Azure Web App Settings
+      - name: Configure Web App Post-Deployment
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            # Set Node.js version and web app configurations
-            az webapp config set --name CampusERP --resource-group CampusERP_group ^
-              --windows-fx-version "NODE|18.19.0" ^
-              --startup-file "dist/index.js"
-
-            # Set application settings
-            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings ^
-              WEBSITE_NODE_DEFAULT_VERSION=18.19.0 ^
-              NODE_ENV=production ^
-              WEBSITE_RUN_FROM_PACKAGE=0 ^
-              DATABASE_URL="%DATABASE_URL%"
-
             # Enable logging
-            az webapp log config --name CampusERP --resource-group CampusERP_group ^
-              --web-server-logging filesystem ^
-              --detailed-error-messages true ^
-              --failed-request-tracing true
+            az webapp log config --name CampusERP --resource-group CampusERP_group --web-server-logging filesystem --detailed-error-messages true --failed-request-tracing true
 
-            # Restart the web app to apply changes
+            # Restart the web app
             az webapp restart --name CampusERP --resource-group CampusERP_group
 
       - name: Logout from Azure
-        run: |
-          az logout
+        run: az logout
         if: always()
