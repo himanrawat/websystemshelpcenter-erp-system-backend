@@ -20,7 +20,7 @@ const bcrypt_1 = require("bcrypt");
 const date_fns_1 = require("date-fns");
 const mail_1 = require("./mail");
 const generateRandomToken = (length) => {
-    return crypto_1.default.randomBytes(length).toString('hex');
+    return crypto_1.default.randomBytes(length).toString("hex");
 };
 exports.generateRandomToken = generateRandomToken;
 const generateOtp = () => {
@@ -47,7 +47,7 @@ const sendOtp = (email) => __awaiter(void 0, void 0, void 0, function* () {
             where: { email: email },
         });
         if (otpToken && otpToken.expiresAt > new Date()) {
-            return { success: false, message: 'OTP has already been sent to you!' };
+            return { success: false, message: "OTP has already been sent to you!" };
         }
         if (otpToken && otpToken.expiresAt < new Date()) {
             yield db_config_1.default.otpToken.delete({
@@ -68,29 +68,32 @@ const sendOtp = (email) => __awaiter(void 0, void 0, void 0, function* () {
         const message = {
             from: process.env.EMAIL,
             to: email,
-            subject: 'Verification Email',
+            subject: "Verification Email",
             html: (0, mail_1.generateEmailTemplate)(OTP),
         };
         yield transporter.sendMail(message);
-        return { success: true, message: 'Verification email has been sent.' };
+        return { success: true, message: "Verification email has been sent." };
     }
     catch (error) {
-        console.error('Error sending OTP:', error);
-        return { success: false, message: 'Error in sending email.' };
+        console.error("Error sending OTP:", error);
+        return { success: false, message: "Error in sending email." };
     }
 });
 exports.sendOtp = sendOtp;
 const generate_id = () => {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    const digits = '0123456789';
-    let id = '';
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const digits = "0123456789";
+    let id = "";
     for (let i = 0; i < 3; i++) {
         id += letters[Math.floor(Math.random() * letters.length)];
     }
     for (let i = 0; i < 4; i++) {
         id += digits[Math.floor(Math.random() * digits.length)];
     }
-    id = id.split('').sort(() => Math.random() - 0.5).join('');
+    id = id
+        .split("")
+        .sort(() => Math.random() - 0.5)
+        .join("");
     return id;
 };
 exports.generate_id = generate_id;

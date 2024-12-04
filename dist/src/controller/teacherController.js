@@ -166,28 +166,32 @@ const createTeacherbyName = (req, res) => __awaiter(void 0, void 0, void 0, func
                     campusId: parseInt(campus_id),
                 },
             });
-            const nodemailer = require('nodemailer');
+            const nodemailer = require("nodemailer");
             const transporter = nodemailer.createTransport({
-                service: 'gmail',
+                service: "gmail",
                 auth: {
                     user: process.env.EMAIL,
-                    pass: process.env.PASSWORD
-                }
+                    pass: process.env.PASSWORD,
+                },
             });
             const message = `You have been registered as a teacher in our system. Your password is ${password}. Please keep it safe.`;
             const mailOptions = {
                 from: process.env.EMAIL,
                 to: newTeacher.email,
-                subject: 'Teacher Registration',
-                html: (0, mail_1.welcomeEmailTemplateForTeacher)("Teacher Registration", message)
+                subject: "Teacher Registration",
+                html: (0, mail_1.welcomeEmailTemplateForTeacher)("Teacher Registration", message),
             };
             const info = yield transporter.sendMail(mailOptions);
-            console.log('Email sent: ' + info.error, info.rejected);
+            console.log("Email sent: " + info.error, info.rejected);
             const { password: _, created_at, updated_at } = newTeacher, responseData = __rest(newTeacher, ["password", "created_at", "updated_at"]);
             const teacherData = Object.assign(Object.assign({}, responseData), { contactNumber: responseData.contactNumber.toString() });
             return res
                 .status(201)
-                .json({ message: "Teacher created!", data: teacherData, success: true });
+                .json({
+                message: "Teacher created!",
+                data: teacherData,
+                success: true,
+            });
         }));
         //   await transporter.sendMail(mailOptions, (error:Error | null, info:any ) => {
         //     if (error) {
@@ -259,16 +263,16 @@ const loginTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const admin = yield db_config_1.default.admin.findUnique({
             where: {
-                id: teacher === null || teacher === void 0 ? void 0 : teacher.campusId
+                id: teacher === null || teacher === void 0 ? void 0 : teacher.campusId,
             },
             select: {
-                schoolName: true
-            }
+                schoolName: true,
+            },
         });
         const campus = yield db_config_1.default.campus.findFirst({
             where: {
-                name: admin === null || admin === void 0 ? void 0 : admin.schoolName
-            }
+                name: admin === null || admin === void 0 ? void 0 : admin.schoolName,
+            },
         });
         const token = jwt.sign({
             id: teacher.id,
@@ -334,16 +338,16 @@ const getTeacher = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 .json({ message: "Teacher does not exist!", success: false });
         const campusName = yield db_config_1.default.admin.findUnique({
             where: {
-                id: teacherExist.campusId
+                id: teacherExist.campusId,
             },
             select: {
-                schoolName: true
-            }
+                schoolName: true,
+            },
         });
         const campus = yield db_config_1.default.campus.findFirst({
             where: {
-                name: campusName === null || campusName === void 0 ? void 0 : campusName.schoolName
-            }
+                name: campusName === null || campusName === void 0 ? void 0 : campusName.schoolName,
+            },
         });
         const teacherData = Object.assign(Object.assign({}, teacherExist), { contactNumber: teacherExist.contactNumber.toString(), campusName: campusName === null || campusName === void 0 ? void 0 : campusName.schoolName, campusLogo: campus === null || campus === void 0 ? void 0 : campus.logo });
         return res.status(200).json({
@@ -365,7 +369,7 @@ const showAllTeachers = (req, res) => __awaiter(void 0, void 0, void 0, function
         const campusId = req.params.campusId;
         const teachers = yield db_config_1.default.teacher.findMany({
             where: {
-                campusId: parseInt(campusId)
+                campusId: parseInt(campusId),
             },
             select: {
                 id: true,
@@ -397,16 +401,12 @@ const showAllTeachers = (req, res) => __awaiter(void 0, void 0, void 0, function
             },
         });
         if (teachers.length == 0)
-            return res
-                .status(200)
-                .json({
+            return res.status(200).json({
                 message: "There are no teachers exist in this campus.",
                 success: false,
             });
         const allTeachers = teachers.map((teacher) => (Object.assign(Object.assign({}, teacher), { contactNumber: teacher.contactNumber.toString() })));
-        return res
-            .status(200)
-            .json({
+        return res.status(200).json({
             data: allTeachers,
             message: "All teachers fetched successfully!",
             success: true,
