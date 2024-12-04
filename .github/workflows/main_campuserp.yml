@@ -56,12 +56,16 @@ jobs:
         run: |
           mkdir deploy
           cp -r dist deploy/
+          cp -r prisma deploy/  # Copy prisma directory first
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
           cp iisnode.yml deploy/
           cd deploy
-          npm install --only=production
+          npm install --omit=dev
+          npm install prisma --save-dev  # Install prisma as dev dependency for generation
+          npx prisma generate  # Generate Prisma client in the deploy directory
+          npm uninstall prisma  # Remove prisma after generation
           cd ..
           zip -r release.zip deploy/*
 
