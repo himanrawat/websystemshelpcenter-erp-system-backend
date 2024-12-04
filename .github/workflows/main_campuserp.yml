@@ -11,7 +11,7 @@ permissions:
   id-token: write
 
 jobs:
-  build:
+  build_and_deploy:
     runs-on: windows-latest
     steps:
       - name: Checkout Code
@@ -40,6 +40,7 @@ jobs:
           copy package.json deploy\
           copy web.config deploy\
           copy iisnode.yml deploy\
+          copy src deploy\src /E/H/C/I
         shell: cmd
 
       - name: Compress Deployment Package
@@ -53,25 +54,13 @@ jobs:
           name: node-app
           path: release.zip
 
-  deploy:
-    runs-on: windows-latest
-    needs: build
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: node-app
-          path: .
-
       - name: Azure Login
         uses: azure/login@v1
         with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "CampusERP"
+          app-name: "CampusERP" # Replace with your Azure App Service name
           package: release.zip
