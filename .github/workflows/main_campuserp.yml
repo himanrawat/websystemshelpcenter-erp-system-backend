@@ -64,10 +64,8 @@ jobs:
           cp iisnode.yml deploy/
           cp startup.js deploy/
           cd deploy
-          npm install --omit=dev
-          npm install prisma --save-dev
+          npm ci --only=production
           npx prisma generate
-          npm uninstall prisma
           cd ..
           zip -r release.zip deploy/*
 
