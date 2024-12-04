@@ -76,14 +76,16 @@ jobs:
       - name: Configure Azure Web App
         shell: powershell
         run: |
-          # Configure deployment settings
-          az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITE_RUN_FROM_PACKAGE=0
+          # Set Node version and web app configurations
+          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "~18" --startup-file "dist/index.js"
 
-          # Set Node version and configuration
-          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1" --web-sockets-enabled true
-
-          # Set environment variables
-          az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings WEBSITE_NODE_DEFAULT_VERSION=18.19.1 NODE_ENV=production DATABASE_URL="${{ secrets.DATABASE_URL }}"
+          # Configure app settings
+          az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
+            SCM_DO_BUILD_DURING_DEPLOYMENT=false `
+            WEBSITE_RUN_FROM_PACKAGE=0 `
+            WEBSITE_NODE_DEFAULT_VERSION="~18" `
+            NODE_ENV=production `
+            DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -91,16 +93,15 @@ jobs:
           app-name: "CampusERP"
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: release.zip
-          type: "zip"
 
-      - name: Configure Logging and Restart
+      - name: Configure Logging
         shell: powershell
         run: |
-          # Enable logging
+          # Enable detailed logging
           az webapp log config --name CampusERP --resource-group CampusERP_group --web-server-logging filesystem --detailed-error-messages true --failed-request-tracing true
 
-          # Restart the web app
-          az webapp restart --name CampusERP --resource-group CampusERP_group
+          # Force restart the web app
+          az webapp restart --name CampusERP --resource-group CampusERP_group --soft-restart
 
       - name: Logout from Azure
         run: az logout
