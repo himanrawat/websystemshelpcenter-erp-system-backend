@@ -112,17 +112,15 @@ jobs:
           inlineScript: |
             # Set Node.js version and other configurations
             az webapp config set --name CampusERP --resource-group CampusERP_group \
-              --windows-fx-version "NODE|18.18.0" \
-              --startup-file "startup.js"
+              --windows-fx-version "NODE|18.19.1"
 
             # Set application settings
             az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
-              WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
-              NODE_ENV=production \
-              WEBSITE_RUN_FROM_PACKAGE=0 \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
-              WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
-              WEBSITE_PRIVATE_TEMP=1
+                WEBSITE_NODE_DEFAULT_VERSION=18.19.1 \
+                NODE_ENV=production \
+                WEBSITE_RUN_FROM_PACKAGE=0 \
+                SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+                WEBSITE_PRIVATE_TEMP=1
 
             # Enable logging for troubleshooting
             az webapp log config --name CampusERP --resource-group CampusERP_group \
