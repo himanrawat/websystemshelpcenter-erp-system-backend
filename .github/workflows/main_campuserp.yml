@@ -22,13 +22,11 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.17.1" # Explicit version
-          cache: "npm" # Add caching
+          node-version: "18.18.0" # Updated to meet Prisma's requirement
+          cache: "npm"
 
       - name: Install Dependencies
-        run: |
-          npm install -g npm@latest  # Ensure latest npm
-          npm install
+        run: npm install
 
       - name: Build TypeScript
         run: npm run build
@@ -47,10 +45,9 @@ jobs:
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
-          cp .node-version deploy/  # Add node version file
           cp -r prisma deploy/
           cd deploy
-          npm install --only=production --no-optional
+          npm install --only=production
           cd ..
           zip -r release.zip deploy/*
 
@@ -59,44 +56,3 @@ jobs:
         with:
           name: node-app
           path: release.zip
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    environment:
-      name: "production"
-      url: https://campuserp.azurewebsites.net
-
-    steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: node-app
-
-      - name: Extract Artifact
-        run: |
-          unzip release.zip
-          mv deploy/* .
-          rm -rf deploy
-
-      - name: Azure CLI Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v2
-        with:
-          app-name: "CampusERP"
-          package: .
-
-      - name: Configure App Settings
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            az webapp config set --name CampusERP --resource-group CampusERP_group \
-              --linux-fx-version "NODE|18.17.1" \
-              --startup-file "dist/index.js"
