@@ -83,7 +83,7 @@ jobs:
           az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
             SCM_DO_BUILD_DURING_DEPLOYMENT=false `
             WEBSITE_RUN_FROM_PACKAGE=0 `
-            WEBSITE_NODE_DEFAULT_VERSION="^18" `
+            WEBSITE_NODE_DEFAULT_VERSION="18.19.1" `
             NODE_ENV=production `
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
