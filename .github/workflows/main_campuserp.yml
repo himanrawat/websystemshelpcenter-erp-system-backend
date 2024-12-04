@@ -10,7 +10,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     environment: production
     steps:
       - name: Checkout Code
@@ -40,14 +40,18 @@ jobs:
       - name: Prepare Deployment Package
         run: |
           mkdir deploy
-          cp -r dist deploy/
-          cp -r node_modules deploy/
-          cp -r prisma deploy/
-          cp package.json deploy/
-          cp package-lock.json deploy/
-          cp web.config deploy/
-          cp iisnode.yml deploy/
-          cd deploy && zip -r ../release.zip *
+          xcopy dist deploy\dist /E/H/C/I
+          xcopy node_modules deploy\node_modules /E/H/C/I
+          xcopy prisma deploy\prisma /E/H/C/I
+          copy package.json deploy\
+          copy package-lock.json deploy\
+          copy web.config deploy\
+          copy iisnode.yml deploy\
+        shell: cmd
+
+      - name: Create deployment archive
+        run: Compress-Archive -Path deploy\* -DestinationPath release.zip
+        shell: powershell
 
       - name: Upload Artifact for Deployment
         uses: actions/upload-artifact@v3
@@ -56,7 +60,7 @@ jobs:
           path: release.zip
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
     environment:
       name: "production"
@@ -84,21 +88,21 @@ jobs:
         with:
           inlineScript: |
             # Set Node.js version and web app configurations
-            az webapp config set --name CampusERP --resource-group CampusERP_group \
-              --windows-fx-version "NODE|18.19.0" \
+            az webapp config set --name CampusERP --resource-group CampusERP_group ^
+              --windows-fx-version "NODE|18.19.0" ^
               --startup-file "dist/index.js"
 
             # Set application settings
-            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
-              WEBSITE_NODE_DEFAULT_VERSION=18.19.0 \
-              NODE_ENV=production \
-              WEBSITE_RUN_FROM_PACKAGE=0 \
-              DATABASE_URL="${{ secrets.DATABASE_URL }}"
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings ^
+              WEBSITE_NODE_DEFAULT_VERSION=18.19.0 ^
+              NODE_ENV=production ^
+              WEBSITE_RUN_FROM_PACKAGE=0 ^
+              DATABASE_URL="%DATABASE_URL%"
 
             # Enable logging
-            az webapp log config --name CampusERP --resource-group CampusERP_group \
-              --web-server-logging filesystem \
-              --detailed-error-messages true \
+            az webapp log config --name CampusERP --resource-group CampusERP_group ^
+              --web-server-logging filesystem ^
+              --detailed-error-messages true ^
               --failed-request-tracing true
 
             # Restart the web app to apply changes
