@@ -24,8 +24,8 @@ jobs:
           node-version: "18.x"
           cache: "npm"
 
-      - name: Install Dependencies
-        run: npm ci --only=production
+      - name: Install All Dependencies
+        run: npm ci
 
       - name: Build Application
         env:
@@ -36,6 +36,11 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
+
+      - name: Clean and Install Production Dependencies
+        run: |
+          rm -rf node_modules
+          npm ci --only=production
 
       - name: Prepare Deployment Package
         run: |
