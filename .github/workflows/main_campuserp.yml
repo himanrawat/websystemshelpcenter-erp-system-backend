@@ -40,14 +40,15 @@ jobs:
       - name: Prepare Deployment Package
         shell: powershell
         run: |
-          copy dist\* .
-          xcopy node_modules . /E/H/C/I
-          xcopy prisma . /E/H/C/I
-          copy package.json .
-          copy package-lock.json .
-          copy web.config .
-          copy iisnode.yml .
-          Compress-Archive -Path * -DestinationPath release.zip -Force
+          mkdir deploy
+          Copy-Item -Path "dist\*" -Destination "deploy" -Recurse -Force
+          Copy-Item -Path "node_modules" -Destination "deploy\node_modules" -Recurse -Force
+          Copy-Item -Path "prisma" -Destination "deploy\prisma" -Recurse -Force
+          Copy-Item -Path "package.json" -Destination "deploy"
+          Copy-Item -Path "package-lock.json" -Destination "deploy"
+          Copy-Item -Path "web.config" -Destination "deploy"
+          Copy-Item -Path "iisnode.yml" -Destination "deploy"
+          Compress-Archive -Path "deploy\*" -DestinationPath "release.zip" -Force
 
       - name: Upload Artifact for Deployment
         uses: actions/upload-artifact@v3
@@ -76,13 +77,8 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            # Configure deployment settings
             az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings SCM_DO_BUILD_DURING_DEPLOYMENT=false WEBSITE_RUN_FROM_PACKAGE=0
-
-            # Set Node version and other configurations
             az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1" --web-sockets-enabled true
-
-            # Set application settings
             az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings WEBSITE_NODE_DEFAULT_VERSION=18.19.1 NODE_ENV=production DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
       - name: Deploy to Azure Web App
@@ -97,10 +93,7 @@ jobs:
         uses: azure/CLI@v1
         with:
           inlineScript: |
-            # Enable logging
             az webapp log config --name CampusERP --resource-group CampusERP_group --web-server-logging filesystem --detailed-error-messages true --failed-request-tracing true
-
-            # Restart the web app
             az webapp restart --name CampusERP --resource-group CampusERP_group
 
       - name: Logout from Azure
