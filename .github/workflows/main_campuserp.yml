@@ -7,6 +7,7 @@ on:
     branches:
       - main
   workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -92,7 +93,7 @@ jobs:
           inlineScript: |
             # Set Node.js version and web app configurations
             az webapp config set --name CampusERP --resource-group CampusERP_group \
-              --windows-fx-version "NODE|18.19.1" \
+              --windows-fx-version "NODE|18.18.0" \
               --startup-file "dist/index.js"
 
             # Set application settings
