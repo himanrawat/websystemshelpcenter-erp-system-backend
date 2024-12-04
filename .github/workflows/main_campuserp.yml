@@ -1,20 +1,19 @@
 name: Build and Deploy Node.js App to Azure Web App - CampusERP
 
-permissions:
-  id-token: write
-  contents: read
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write # Necessary for OIDC authentication with Azure
+
 jobs:
   build:
-    runs-on: ubuntu-latest
-    environment: production
-
+    runs-on: windows-latest
+    environment: Production
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -22,76 +21,55 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.18.0"
+          node-version: "18.x"
           cache: "npm"
 
       - name: Install Dependencies
-        run: |
-          npm install
-          npm install -g prisma
+        run: npm ci --only=production
+
+      - name: Build Application
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: npm run build
 
       - name: Generate Prisma Client
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: npx prisma generate
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Build TypeScript
-        run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Create startup.js
-        run: |
-          echo "const path = require('path');
-          const fs = require('fs');
-          console.log('Current directory:', process.cwd());
-          console.log('Directory contents:', fs.readdirSync('.'));
-          try {
-              require('./dist/index.js');
-          } catch (error) {
-              console.error('Error starting application:', error);
-              process.exit(1);
-          }" > startup.js
 
       - name: Prepare Deployment Package
         run: |
           mkdir deploy
-          cp -r dist deploy/
-          cp -r prisma deploy/
-          cp package.json deploy/
-          cp package-lock.json deploy/
-          cp web.config deploy/
-          cp iisnode.yml deploy/
-          cp startup.js deploy/
-          cd deploy
-          npm ci --only=production
-          npx prisma generate
-          cd ..
-          zip -r release.zip deploy/*
+          xcopy dist deploy\dist /E/H/C/I
+          xcopy prisma deploy\prisma /E/H/C/I
+          xcopy node_modules deploy\node_modules /E/H/C/I
+          copy package.json deploy\
+          copy web.config deploy\
+          copy iisnode.yml deploy\
+          copy startup.js deploy\
+        shell: cmd
 
-      - name: Upload Artifact for Deployment
-        uses: actions/upload-artifact@v3
+      - name: Compress Deployment Package
+        run: |
+          Compress-Archive -Path deploy\* -DestinationPath release.zip
+        shell: powershell
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: release.zip
 
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: build
-    environment:
-      name: "production"
-      url: https://campuserp.azurewebsites.net
-
+    environment: Production
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: node-app
-
-      - name: Unzip Artifact
-        run: |
-          unzip release.zip
-          rm release.zip
+          path: .
 
       - name: Azure Login
         uses: azure/login@v1
@@ -100,33 +78,8 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy to Azure Web App
-        id: deploy-to-webapp
-        uses: azure/webapps-deploy@v3
+      - name: Deploy to Azure WebApp
+        uses: azure/webapps-deploy@v2
         with:
           app-name: "CampusERP"
-          package: ./deploy
-
-      - name: Configure Azure Web App Settings
-        uses: azure/CLI@v1
-        with:
-          inlineScript: |
-            # Set application settings
-            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
-              WEBSITE_NODE_DEFAULT_VERSION=18.19.1 \
-              NODE_ENV=production \
-              SCM_DO_BUILD_DURING_DEPLOYMENT=false
-
-            # Enable logging for troubleshooting
-            az webapp log config --name CampusERP --resource-group CampusERP_group \
-              --web-server-logging filesystem \
-              --detailed-error-messages true \
-              --failed-request-tracing true
-
-            # Restart the web app to apply changes
-            az webapp restart --name CampusERP --resource-group CampusERP_group
-
-      - name: Logout from Azure
-        run: |
-          az logout
-        if: always()
+          package: release.zip
