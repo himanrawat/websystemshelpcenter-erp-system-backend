@@ -75,5 +75,5 @@ jobs:
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "CampusERP"
+          app-name: "campusERP"
           package: release.zip
