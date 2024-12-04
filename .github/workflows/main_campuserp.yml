@@ -59,11 +59,9 @@ jobs:
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
-          cp startup.js deploy/
-          cp -r prisma deploy/
+          cp iisnode.yml deploy/
           cd deploy
           npm install --only=production
-          chmod -R 755 .
           cd ..
           zip -r release.zip deploy/*
 
