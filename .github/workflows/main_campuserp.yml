@@ -22,19 +22,21 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.18.0" # Updated to meet Prisma's requirement
+          node-version: "18.18.0"
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm install
-
-      - name: Build TypeScript
-        run: npm run build
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          npm install
+          npm install -g prisma
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build TypeScript
+        run: npm run build
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
@@ -56,3 +58,66 @@ jobs:
         with:
           name: node-app
           path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: "production"
+      url: https://campuserp.azurewebsites.net
+
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: node-app
+
+      - name: Unzip Artifact
+        run: |
+          unzip release.zip
+          rm release.zip
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: "CampusERP"
+          slot-name: "production"
+          package: ./deploy
+          respect-pom-xml: false
+
+      - name: Configure Azure Web App Settings
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Set Node.js version and other configurations
+            az webapp config set --name CampusERP --resource-group CampusERP_group \
+              --windows-fx-version "NODE|18.18.0" \
+              --startup-file "dist/index.js"
+
+            # Set application settings
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
+              WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
+              NODE_ENV=production \
+              WEBSITE_RUN_FROM_PACKAGE=0
+
+            # Enable logging
+            az webapp log config --name CampusERP --resource-group CampusERP_group \
+              --web-server-logging filesystem \
+              --detailed-error-messages true \
+              --failed-request-tracing true
+
+            # Restart the web app to apply changes
+            az webapp restart --name CampusERP --resource-group CampusERP_group
+
+      - name: Logout from Azure
+        run: |
+          az logout
+        if: always()
