@@ -8,7 +8,7 @@ on:
 
 permissions:
   contents: read
-  id-token: write # Necessary for OIDC authentication with Azure
+  id-token: write
 
 jobs:
   build:
@@ -38,8 +38,11 @@ jobs:
         run: npx prisma generate
 
       - name: Clean and Install Production Dependencies
+        shell: powershell
         run: |
-          rm -rf node_modules
+          if (Test-Path node_modules) {
+            Remove-Item -Path node_modules -Recurse -Force
+          }
           npm ci --only=production
 
       - name: Prepare Deployment Package
