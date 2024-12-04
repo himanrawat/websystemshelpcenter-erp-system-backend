@@ -1,6 +1,6 @@
 node_env: production
 nodeProcessCountPerApplication: 1
 maxConcurrentRequestsPerProcess: 1024
-loggingEnabled: true  # Enable logging
+loggingEnabled: true
 debuggingEnabled: false
 devErrorsEnabled: true
