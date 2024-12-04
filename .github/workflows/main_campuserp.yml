@@ -40,6 +40,18 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
+      - name: Create startup.js
+        run: |
+          echo "const path = require('path');
+          console.log('Current directory:', process.cwd());
+          console.log('Directory contents:', require('fs').readdirSync('.'));
+          try {
+              require('./dist/index.js');
+          } catch (error) {
+              console.error('Error starting application:', error);
+              process.exit(1);
+          }" > startup.js
+
       - name: Prepare Deployment Package
         run: |
           mkdir deploy
@@ -47,9 +59,11 @@ jobs:
           cp package.json deploy/
           cp package-lock.json deploy/
           cp web.config deploy/
+          cp startup.js deploy/
           cp -r prisma deploy/
           cd deploy
           npm install --only=production
+          chmod -R 755 .
           cd ..
           zip -r release.zip deploy/*
 
@@ -91,7 +105,6 @@ jobs:
           app-name: "CampusERP"
           slot-name: "production"
           package: ./deploy
-          respect-pom-xml: false
 
       - name: Configure Azure Web App Settings
         uses: azure/CLI@v1
@@ -100,15 +113,18 @@ jobs:
             # Set Node.js version and other configurations
             az webapp config set --name CampusERP --resource-group CampusERP_group \
               --windows-fx-version "NODE|18.18.0" \
-              --startup-file "dist/index.js"
+              --startup-file "startup.js"
 
             # Set application settings
             az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
               WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
               NODE_ENV=production \
-              WEBSITE_RUN_FROM_PACKAGE=0
+              WEBSITE_RUN_FROM_PACKAGE=0 \
+              SCM_DO_BUILD_DURING_DEPLOYMENT=false \
+              WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
+              WEBSITE_PRIVATE_TEMP=1
 
-            # Enable logging
+            # Enable logging for troubleshooting
             az webapp log config --name CampusERP --resource-group CampusERP_group \
               --web-server-logging filesystem \
               --detailed-error-messages true \
