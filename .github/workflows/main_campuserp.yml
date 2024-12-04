@@ -40,7 +40,6 @@ jobs:
           copy package.json deploy\
           copy web.config deploy\
           copy iisnode.yml deploy\
-          copy startup.js deploy\
         shell: cmd
 
       - name: Compress Deployment Package
@@ -74,5 +73,5 @@ jobs:
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v2
         with:
-          app-name: "campusERP"
+          app-name: "CampusERP"
           package: release.zip
