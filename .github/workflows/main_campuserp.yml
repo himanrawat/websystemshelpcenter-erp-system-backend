@@ -1,18 +1,16 @@
 name: Build and Deploy Node.js App to Azure Web App - CampusERP
-
+permissions:
+  id-token: write
+  contents: read
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
-permissions:
-  contents: read
-  id-token: write
-
 jobs:
-  build_and_deploy:
-    runs-on: windows-latest
+  build:
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -20,47 +18,100 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.x"
+          node-version: "18.18.0"
+          cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
-
-      - name: Build Application
-        run: npm run build
+        run: |
+          npm ci
+          npm install -g prisma
 
       - name: Generate Prisma Client
         run: npx prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+
+      - name: Build TypeScript
+        run: npm run build
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Prepare Deployment Package
         run: |
           mkdir deploy
-          xcopy dist deploy\dist /E/H/C/I
-          xcopy prisma deploy\prisma /E/H/C/I
-          xcopy node_modules deploy\node_modules /E/H/C/I
-          copy package.json deploy\
-          copy web.config deploy\
-          copy iisnode.yml deploy\
-          copy src deploy\src /E/H/C/I
-        shell: cmd
+          cp -r dist deploy/
+          cp -r node_modules deploy/
+          cp -r prisma deploy/
+          cp package.json deploy/
+          cp package-lock.json deploy/
+          cp web.config deploy/
+          cp iisnode.yml deploy/
 
-      - name: Compress Deployment Package
-        run: |
-          Compress-Archive -Path deploy\* -DestinationPath release.zip
-        shell: powershell
+      - name: Create deployment archive
+        run: zip -r release.zip deploy/*
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload Artifact for Deployment
+        uses: actions/upload-artifact@v3
         with:
           name: node-app
           path: release.zip
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: "production"
+      url: https://campuserp.azurewebsites.net
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: node-app
+
+      - name: Unzip Artifact
+        run: |
+          unzip release.zip
+          rm release.zip
 
       - name: Azure Login
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Deploy to Azure WebApp
-        uses: azure/webapps-deploy@v2
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
         with:
-          app-name: "CampusERP" # Replace with your Azure App Service name
-          package: release.zip
+          app-name: "CampusERP"
+          slot-name: "production"
+          package: ./deploy
+
+      - name: Configure Azure Web App Settings
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            # Set Node.js version and web app configurations
+            az webapp config set --name CampusERP --resource-group CampusERP_group \
+              --windows-fx-version "NODE|18.19.1" \
+              --startup-file "dist/index.js"
+
+            # Set application settings
+            az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings \
+              WEBSITE_NODE_DEFAULT_VERSION=18.18.0 \
+              NODE_ENV=production \
+              WEBSITE_RUN_FROM_PACKAGE=0 \
+              DATABASE_URL="${{ secrets.DATABASE_URL }}"
+
+            # Enable logging
+            az webapp log config --name CampusERP --resource-group CampusERP_group \
+              --web-server-logging filesystem \
+              --detailed-error-messages true \
+              --failed-request-tracing true
+
+            # Restart the web app to apply changes
+            az webapp restart --name CampusERP --resource-group CampusERP_group
+
+      - name: Logout from Azure
+        run: |
+          az logout
+        if: always()
