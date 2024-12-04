@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "^18" # Compatible with Node.js 18
+          node-version: "18.x"
           cache: "npm"
 
       - name: Install Dependencies
@@ -40,15 +40,30 @@ jobs:
       - name: Prepare Deployment Package
         shell: powershell
         run: |
-          mkdir deploy
-          Copy-Item -Path "dist\*" -Destination "deploy" -Recurse -Force
-          Copy-Item -Path "node_modules" -Destination "deploy\node_modules" -Recurse -Force
-          Copy-Item -Path "prisma" -Destination "deploy\prisma" -Recurse -Force
+          # Create clean deployment directory
+          Remove-Item -Path deploy -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -Path deploy -ItemType Directory
+
+          # Copy build files
+          Copy-Item -Path "dist" -Destination "deploy" -Recurse
           Copy-Item -Path "package.json" -Destination "deploy"
           Copy-Item -Path "package-lock.json" -Destination "deploy"
           Copy-Item -Path "web.config" -Destination "deploy"
-          Copy-Item -Path "iisnode.yml" -Destination "deploy"
-          Compress-Archive -Path "deploy\*" -DestinationPath "release.zip" -Force
+
+          # Install production dependencies
+          Set-Location deploy
+          npm install --production
+          Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
+
+          # Create iisnode logs directory
+          New-Item -Path "iisnode" -ItemType Directory
+
+          # Set IIS directory permissions
+          icacls . /grant "BUILTIN\IIS_IUSRS:(OI)(CI)(F)"
+
+          # Create deployment package
+          Compress-Archive -Path * -DestinationPath ..\release.zip -Force
+          Set-Location ..
 
       - name: Upload Artifact for Deployment
         uses: actions/upload-artifact@v3
@@ -76,14 +91,13 @@ jobs:
       - name: Configure Azure Web App
         shell: powershell
         run: |
-          # Set Node version and web app configurations
-          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1"
-
           # Configure app settings
+          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "node|18" --startup-file "dist/index.js"
+
           az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
             SCM_DO_BUILD_DURING_DEPLOYMENT=false `
             WEBSITE_RUN_FROM_PACKAGE=0 `
-            WEBSITE_NODE_DEFAULT_VERSION="18.19.1" `
+            WEBSITE_NODE_DEFAULT_VERSION="18" `
             NODE_ENV=production `
             DATABASE_URL="${{ secrets.DATABASE_URL }}"
 
@@ -94,16 +108,9 @@ jobs:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: release.zip
 
-      - name: Configure Logging and Restart
+      - name: Restart Web App
         shell: powershell
         run: |
-          # Enable detailed logging
-          az webapp log config --name CampusERP --resource-group CampusERP_group `
-            --web-server-logging filesystem `
-            --detailed-error-messages true `
-            --failed-request-tracing true
-
-          # Restart the web app
           az webapp restart --name CampusERP --resource-group CampusERP_group
 
       - name: Logout from Azure
