@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20"
+          node-version: "20.9.0"
           cache: "npm"
 
       - name: Install Dependencies
@@ -100,43 +100,41 @@ jobs:
       - name: Configure Azure Web App
         shell: pwsh
         run: |
-          Write-Host "Setting up Node.js runtime..."
+          Write-Host "Setting up Node.js configuration..."
 
-          # Store the version string in a variable and escape it properly
-          $nodeVersion = 'node|20'
-
-          # Use single quotes to prevent PowerShell string interpolation
-          $runtimeResult = az webapp config set `
-              --name 'CampusERP' `
-              --resource-group 'CampusERP_group' `
-              --windows-fx-version '$nodeVersion' `
-              --startup-file 'dist/index.js' | Out-String
-
-          if ($LASTEXITCODE -ne 0) {
-              Write-Host "Runtime Result: $runtimeResult"
-              Write-Error "Failed to configure runtime stack"
-              exit 1
-          }
-
+          # Configure app settings first
           Write-Host "Configuring app settings..."
-          $settingsArray = @(
-              'SCM_DO_BUILD_DURING_DEPLOYMENT=false',
-              'WEBSITE_RUN_FROM_PACKAGE=0',
-              'WEBSITE_NODE_DEFAULT_VERSION=20',
-              'NODE_ENV=production',
+          $settings = @(
+              "WEBSITE_NODE_DEFAULT_VERSION=~20.9.0",
+              "SCM_DO_BUILD_DURING_DEPLOYMENT=false",
+              "WEBSITE_RUN_FROM_PACKAGE=0",
+              "NODE_ENV=production",
               "DATABASE_URL=${{ secrets.DATABASE_URL }}",
-              'WEBSITE_HTTPLOGGING_RETENTION_DAYS=7',
-              'AZURE_WEBSITE_HOSTNAME=campuserp.azurewebsites.net'
+              "WEBSITE_HTTPLOGGING_RETENTION_DAYS=7",
+              "AZURE_WEBSITE_HOSTNAME=campuserp.azurewebsites.net"
           )
 
           $settingsResult = az webapp config appsettings set `
               --name 'CampusERP' `
               --resource-group 'CampusERP_group' `
-              --settings $settingsArray | Out-String
+              --settings $settings | Out-String
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "Settings Result: $settingsResult"
               Write-Error "Failed to configure app settings"
+              exit 1
+          }
+
+          # Then set the runtime version
+          Write-Host "Setting Node.js version..."
+          $runtimeResult = az webapp config set `
+              --name 'CampusERP' `
+              --resource-group 'CampusERP_group' `
+              --windows-fx-version 'NODE|20.9.0' | Out-String
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Host "Runtime Result: $runtimeResult"
+              Write-Error "Failed to configure runtime stack"
               exit 1
           }
 
