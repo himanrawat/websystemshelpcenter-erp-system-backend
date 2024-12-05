@@ -49,10 +49,12 @@ jobs:
           Copy-Item -Path "package.json" -Destination "deploy"
           Copy-Item -Path "package-lock.json" -Destination "deploy"
           Copy-Item -Path "web.config" -Destination "deploy"
+          Copy-Item -Path "prisma" -Destination "deploy" -Recurse
 
           # Install production dependencies
           Set-Location deploy
           npm install --production
+          npm install @prisma/client
           Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
 
           # Create iisnode logs directory
@@ -92,14 +94,15 @@ jobs:
         shell: powershell
         run: |
           # Configure app settings
-          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "node|18" --startup-file "dist/index.js"
+          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18-LTS" --startup-file "dist/index.js"
 
           az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
-            SCM_DO_BUILD_DURING_DEPLOYMENT=false `
-            WEBSITE_RUN_FROM_PACKAGE=0 `
-            WEBSITE_NODE_DEFAULT_VERSION="18" `
-            NODE_ENV=production `
-            DATABASE_URL="${{ secrets.DATABASE_URL }}"
+          SCM_DO_BUILD_DURING_DEPLOYMENT=false `
+          WEBSITE_RUN_FROM_PACKAGE=0 `
+          WEBSITE_NODE_DEFAULT_VERSION="~18" `
+          NODE_ENV=production `
+          DATABASE_URL="${{ secrets.DATABASE_URL }}" `
+          WEBSITE_NODE_DEFAULT_VERSION="~18.17.0"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
