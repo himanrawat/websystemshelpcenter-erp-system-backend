@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "20.10.0"
+          node-version: "20"
           cache: "npm"
 
       - name: Install Dependencies
@@ -102,12 +102,15 @@ jobs:
         run: |
           Write-Host "Setting up Node.js runtime..."
 
-          # Properly escape and quote the version string
+          # Store the version string in a variable and escape it properly
+          $nodeVersion = 'node|20'
+
+          # Use single quotes to prevent PowerShell string interpolation
           $runtimeResult = az webapp config set `
-                --name CampusERP `
-                --resource-group CampusERP_group `
-                --windows-fx-version "node|20" `
-                --startup-file "dist/index.js" 2>&1
+              --name 'CampusERP' `
+              --resource-group 'CampusERP_group' `
+              --windows-fx-version '$nodeVersion' `
+              --startup-file 'dist/index.js' | Out-String
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "Runtime Result: $runtimeResult"
@@ -116,7 +119,6 @@ jobs:
           }
 
           Write-Host "Configuring app settings..."
-          # Convert settings to name=value format
           $settingsArray = @(
               'SCM_DO_BUILD_DURING_DEPLOYMENT=false',
               'WEBSITE_RUN_FROM_PACKAGE=0',
@@ -128,9 +130,9 @@ jobs:
           )
 
           $settingsResult = az webapp config appsettings set `
-              --name CampusERP `
-              --resource-group CampusERP_group `
-              --settings @settingsArray 2>&1
+              --name 'CampusERP' `
+              --resource-group 'CampusERP_group' `
+              --settings $settingsArray | Out-String
 
           if ($LASTEXITCODE -ne 0) {
               Write-Host "Settings Result: $settingsResult"
