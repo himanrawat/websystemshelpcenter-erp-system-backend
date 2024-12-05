@@ -23,9 +23,12 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
+        shell: pwsh
         run: |
+          Write-Host "Installing dependencies..."
           npm ci
           npm install -g prisma
+          Write-Host "Dependencies installed successfully"
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -40,6 +43,8 @@ jobs:
       - name: Prepare Deployment Package
         shell: pwsh
         run: |
+          Write-Host "Creating deployment package..."
+
           # Create clean deployment directory
           Remove-Item -Path deploy -Recurse -Force -ErrorAction SilentlyContinue
           New-Item -Path deploy -ItemType Directory
@@ -67,8 +72,10 @@ jobs:
           Compress-Archive -Path * -DestinationPath ..\release.zip -Force
           Set-Location ..
 
+          Write-Host "Deployment package created successfully"
+
       - name: Upload Artifact for Deployment
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: node-app
           path: release.zip
@@ -81,7 +88,7 @@ jobs:
       url: https://campuserp.azurewebsites.net
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: node-app
 
@@ -97,7 +104,7 @@ jobs:
           $runtimeResult = az webapp config set `
               --name CampusERP `
               --resource-group CampusERP_group `
-              --windows-fx-version "\"NODE|20\"" `
+              --windows-fx-version 'NODE|20' `
               --startup-file "dist/index.js"
 
           if ($LASTEXITCODE -ne 0) {
