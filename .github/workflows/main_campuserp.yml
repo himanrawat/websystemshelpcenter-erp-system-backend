@@ -106,7 +106,7 @@ jobs:
           $runtimeResult = az webapp config set `
                 --name CampusERP `
                 --resource-group CampusERP_group `
-                --windows-fx-version "NODEJS|20.10.0" `
+                --windows-fx-version "node|20" `
                 --startup-file "dist/index.js" 2>&1
 
           if ($LASTEXITCODE -ne 0) {
@@ -120,7 +120,7 @@ jobs:
           $settingsArray = @(
               'SCM_DO_BUILD_DURING_DEPLOYMENT=false',
               'WEBSITE_RUN_FROM_PACKAGE=0',
-              'WEBSITE_NODE_DEFAULT_VERSION=~20.10.0',
+              'WEBSITE_NODE_DEFAULT_VERSION=20',
               'NODE_ENV=production',
               "DATABASE_URL=${{ secrets.DATABASE_URL }}",
               'WEBSITE_HTTPLOGGING_RETENTION_DAYS=7',
