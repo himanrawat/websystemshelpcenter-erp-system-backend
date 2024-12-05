@@ -19,7 +19,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: "18.19.1"
+          node-version: "20.x"
           cache: "npm"
 
       - name: Install Dependencies
@@ -38,7 +38,7 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Prepare Deployment Package
-        shell: powershell
+        shell: pwsh
         run: |
           # Create clean deployment directory
           Remove-Item -Path deploy -Recurse -Force -ErrorAction SilentlyContinue
@@ -53,7 +53,7 @@ jobs:
 
           # Install production dependencies
           Set-Location deploy
-          npm install --production
+          npm install --omit=dev
           npm install @prisma/client
           Remove-Item package-lock.json -Force -ErrorAction SilentlyContinue
 
@@ -91,18 +91,42 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Configure Azure Web App
-        shell: powershell
+        shell: pwsh
         run: |
-          # Configure Node.js version and startup file
-          az webapp config set --name CampusERP --resource-group CampusERP_group --windows-fx-version "NODE|18.19.1" --startup-file "dist/index.js"
+          Write-Host "Setting up Node.js runtime..."
+          $runtimeResult = az webapp config set `
+              --name CampusERP `
+              --resource-group CampusERP_group `
+              --windows-fx-version "\"NODE|20\"" `
+              --startup-file "dist/index.js"
 
-          # Configure app settings
-          az webapp config appsettings set --name CampusERP --resource-group CampusERP_group --settings `
-          SCM_DO_BUILD_DURING_DEPLOYMENT=false `
-          WEBSITE_RUN_FROM_PACKAGE=0 `
-          WEBSITE_NODE_DEFAULT_VERSION="18.19.1" `
-          NODE_ENV=production `
-          DATABASE_URL="${{ secrets.DATABASE_URL }}"
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to configure runtime stack: $runtimeResult"
+              exit 1
+          }
+
+          Write-Host "Configuring app settings..."
+          $settings = @(
+              "SCM_DO_BUILD_DURING_DEPLOYMENT=false",
+              "WEBSITE_RUN_FROM_PACKAGE=0",
+              "WEBSITE_NODE_DEFAULT_VERSION=20",
+              "NODE_ENV=production",
+              "DATABASE_URL=${{ secrets.DATABASE_URL }}",
+              "WEBSITE_HTTPLOGGING_RETENTION_DAYS=7",
+              "AZURE_WEBSITE_HOSTNAME=campuserp.azurewebsites.net"
+          )
+
+          $settingsResult = az webapp config appsettings set `
+              --name CampusERP `
+              --resource-group CampusERP_group `
+              --settings $settings
+
+          if ($LASTEXITCODE -ne 0) {
+              Write-Error "Failed to configure app settings: $settingsResult"
+              exit 1
+          }
+
+          Write-Host "App configuration completed successfully"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
@@ -112,9 +136,11 @@ jobs:
           package: release.zip
 
       - name: Restart Web App
-        shell: powershell
+        shell: pwsh
         run: |
+          Write-Host "Restarting web app..."
           az webapp restart --name CampusERP --resource-group CampusERP_group
+          Write-Host "Web app restart completed"
 
       - name: Logout from Azure
         run: az logout
